@@ -1,10 +1,3 @@
-/*
- * tester.cpp
- *
- *  Created on: Mar 11, 2018
- *      Author: host001
- */
-
 #include "../usr_includes/tester.h"
 #include "../usr_includes/print_ts.h"
 #include <thread>
@@ -17,9 +10,44 @@ bool doWork = true;
 
 
 int main () {
+	startThreads("hello world", 3, P1, 2, 500);
+	joinThreads();
+}
 
-	startThreads("hello world", 3, P1, 7, 750);
 
+void printHelper(std::string str, WHICH_PRINT wp, int numTimesToPrint, int millisecond_delay) {
+	for (int i = 0; i < numTimesToPrint; i++) {
+
+		while (doWork) {
+			switch (wp) {
+			case P1:
+					threads.push_back(std::thread(PRINT1, std::ref(str)));
+					//cout << "in printHelper P1 case" << endl;
+				break;
+			case P2:
+					threads.push_back(std::thread(PRINT2, std::ref(str), std::ref(str)));
+					//cout << "in printHelper P2 case" << endl;
+				break;
+			case P3:
+					threads.push_back(std::thread(PRINT3, std::ref(str), std::ref(str), std::ref(str)));
+					//cout << "in printHelper P3 case" << endl;
+				break;
+			case P4:
+					threads.push_back(std::thread(PRINT4, std::ref(str), std::ref(str), std::ref(str), std::ref(str)));
+					//cout << "in printHelper P4 case" << endl;
+				break;
+			case P5:
+					threads.push_back(std::thread(PRINT5, std::ref(str), std::ref(str), std::ref(str), std::ref(str), std::ref(str)));
+					//cout << "in printHelper P5 case" << endl;
+				break;
+			default:
+				break;
+			}
+			//joinThreads();
+			std::this_thread::sleep_for(std::chrono::milliseconds(millisecond_delay));
+		}
+		cout << USER_CHOSE_TO_CANCEL << endl;
+	}
 }
 
 /*
@@ -34,59 +62,10 @@ int main () {
  */
 void startThreads(std::string s, int numThreads, WHICH_PRINT wp, int numTimesToPrint, int millisecond_delay) {
 
-	//unsigned num_cpus = thread::hardware_concurrency();
-
-	while (doWork) {
-		switch (wp) {
-		case P1:
-			for (int i = 0; i < numThreads; i++) {
-
-				int k = numTimesToPrint;
-				threads.push_back(std::thread(PRINT1, std::ref(s)));
-
-				while (k > 0) {
-					threads.at(i)=thread(PRINT1, std::ref(s));
-					std::this_thread::sleep_for(std::chrono::milliseconds(millisecond_delay));
-					k--;
-				}
-
-				//if numTimesToPrint > 1, call PRINT1 again inside THIS thread
-			}
-			break;
-
-		case P2:
-			for (int i = 0; i < numThreads; i++) {
-				threads.push_back(std::thread(PRINT2, std::ref(s), std::ref(s)));
-				std::this_thread::sleep_for(std::chrono::milliseconds(millisecond_delay));
-			}
-			break;
-
-		case P3:
-			for (int i = 0; i < numThreads; i++) {
-				threads.push_back(std::thread(PRINT3, std::ref(s), std::ref(s), std::ref(s)));
-				std::this_thread::sleep_for(std::chrono::milliseconds(millisecond_delay));
-			}
-			break;
-
-		case P4:
-			for (int i = 0; i < numThreads; i++) {
-				threads.push_back(std::thread(PRINT4, std::ref(s), std::ref(s), std::ref(s), std::ref(s)));
-				std::this_thread::sleep_for(std::chrono::milliseconds(millisecond_delay));
-			}
-			break;
-
-		case P5:
-			for (int i = 0; i < numThreads; i++) {
-				threads.push_back(std::thread(PRINT5, std::ref(s), std::ref(s), std::ref(s), std::ref(s), std::ref(s)));
-				std::this_thread::sleep_for(std::chrono::milliseconds(millisecond_delay));
-			}
-			break;
-
-		default:
-			break;
+		for (int i = 0; i < numThreads; i++) {
+			threads.push_back(std::thread(printHelper, s, wp, numTimesToPrint, millisecond_delay));
 		}
-		joinThreads();
-	}
+		//joinThreads();
 }
 
 /*
@@ -108,11 +87,12 @@ void setCancelThreads(bool bCancel) {
  */
 void joinThreads() {
 
-	for(auto& thread : threads){
-		thread.join();
-}
+//	for(auto& thread : threads){
+//		thread.join();
+//}
+
+	for (unsigned int i = 0; i < threads.size(); i++) {
+		threads.at(i).join();
+	}
 	doWork = false;
-//	for (unsigned int i = 0; i < threads.size(); i++) {
-//		threads.at(i).join();
-//	}
 }
