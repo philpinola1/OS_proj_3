@@ -2,52 +2,67 @@
 #include "../usr_includes/print_ts.h"
 #include <thread>
 #include <vector>
+#include <mutex>
 
 using namespace std;
 
+mutex doWorkChanged, exiting;
 vector<thread> threads;
 bool doWork = true;
 
-
-int main () {
-	startThreads("hello world", 3, P1, 2, 500);
-	joinThreads();
-}
+//
+//int main() {
+//	startThreads("hello world", 5, P1, 6, 100);
+//	std::this_thread::sleep_for(std::chrono::milliseconds(400));
+//	cout << "im awake!" << endl;
+//	setCancelThreads(true);
+//	//joinThreads();
+//}
 
 
 void printHelper(std::string str, WHICH_PRINT wp, int numTimesToPrint, int millisecond_delay) {
-	for (int i = 0; i < numTimesToPrint; i++) {
 
-		while (doWork) {
-			switch (wp) {
-			case P1:
-					threads.push_back(std::thread(PRINT1, std::ref(str)));
-					//cout << "in printHelper P1 case" << endl;
-				break;
-			case P2:
-					threads.push_back(std::thread(PRINT2, std::ref(str), std::ref(str)));
-					//cout << "in printHelper P2 case" << endl;
-				break;
-			case P3:
-					threads.push_back(std::thread(PRINT3, std::ref(str), std::ref(str), std::ref(str)));
-					//cout << "in printHelper P3 case" << endl;
-				break;
-			case P4:
-					threads.push_back(std::thread(PRINT4, std::ref(str), std::ref(str), std::ref(str), std::ref(str)));
-					//cout << "in printHelper P4 case" << endl;
-				break;
-			case P5:
-					threads.push_back(std::thread(PRINT5, std::ref(str), std::ref(str), std::ref(str), std::ref(str), std::ref(str)));
-					//cout << "in printHelper P5 case" << endl;
-				break;
-			default:
-				break;
+	WHICH_PRINT unInitwp;										//a garbage/unint WHICH_PRINT object
+	WHICH_PRINT *wpPointer = &wp;								//a pointer to wp
+
+	std::thread::id this_id = std::this_thread::get_id();		//id the current thread
+
+		for (int i = 0; i < numTimesToPrint; i++) {
+
+			if (!doWork) {										//checks if setCancelThread changed doWork to false
+				std::lock_guard<mutex> lock(doWorkChanged);		//lockguard this bc we are writing to i (to escape the for loop)
+				i = numTimesToPrint;
+				wpPointer = &unInitwp; //sets wp to an uninitalized WHICH_PRINT object so that we don't get to any of the print statements.
 			}
-			//joinThreads();
-			std::this_thread::sleep_for(std::chrono::milliseconds(millisecond_delay));
+
+			if (wpPointer != &unInitwp) {						//if the above if statement was hit, this will be true
+
+				switch (wp) {
+					case P1:
+						PRINT1(str);
+						break;
+					case P2:
+						PRINT2(str, str);
+						break;
+					case P3:
+						PRINT3(str, str, str);
+						break;
+					case P4:
+						PRINT4(str, str, str, str);
+						break;
+					case P5:
+						PRINT5(str, str, str, str, str);
+						break;
+					default:
+						break;
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(millisecond_delay));
+			}
+			else {
+				std::lock_guard<mutex> lock(exiting);
+				cout << "exiting on " << this_id << endl;
+			}
 		}
-		cout << USER_CHOSE_TO_CANCEL << endl;
-	}
 }
 
 /*
@@ -61,11 +76,9 @@ void printHelper(std::string str, WHICH_PRINT wp, int numTimesToPrint, int milli
  * if user chooses to cancel then this function should print USER_CHOSE_TO_CANCEL before exit
  */
 void startThreads(std::string s, int numThreads, WHICH_PRINT wp, int numTimesToPrint, int millisecond_delay) {
-
 		for (int i = 0; i < numThreads; i++) {
 			threads.push_back(std::thread(printHelper, s, wp, numTimesToPrint, millisecond_delay));
 		}
-		//joinThreads();
 }
 
 /*
@@ -74,11 +87,11 @@ void startThreads(std::string s, int numThreads, WHICH_PRINT wp, int numTimesToP
  */
 void setCancelThreads(bool bCancel) {
 	if (bCancel) {
-		doWork = false;
-		joinThreads();
+		doWork = false;										//inform printHelper that threads were canceled
+		joinThreads();										//cause all thread to exit
 	}
 	else {
-		doWork = true;
+		doWork = true;										//reset logic
 	}
 }
 
@@ -86,13 +99,8 @@ void setCancelThreads(bool bCancel) {
  * waits for all threads to complete
  */
 void joinThreads() {
-
-//	for(auto& thread : threads){
-//		thread.join();
-//}
-
-	for (unsigned int i = 0; i < threads.size(); i++) {
-		threads.at(i).join();
+	for(auto& t: threads){
+		t.join();
 	}
 	doWork = false;
 }
