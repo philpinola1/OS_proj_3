@@ -10,16 +10,6 @@ mutex doWorkChanged, exiting;
 vector<thread> threads;
 bool doWork = true;
 
-//
-//int main() {
-//	startThreads("hello world", 5, P1, 6, 100);
-//	std::this_thread::sleep_for(std::chrono::milliseconds(400));
-//	cout << "im awake!" << endl;
-//	setCancelThreads(true);
-//	//joinThreads();
-//}
-
-
 void printHelper(std::string str, WHICH_PRINT wp, int numTimesToPrint, int millisecond_delay) {
 
 	WHICH_PRINT unInitwp;										//a garbage/unint WHICH_PRINT object
